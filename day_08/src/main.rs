@@ -101,6 +101,41 @@ impl Points {
         sizes.sort();
         sizes.into_iter().rev()
     }
+    fn part_2(&self) -> u64 {
+        let mut circuits = QuickUnionUf::<UnionBySize>::new(self.points.len());
+        let mut min_distance = 0;
+        let mut size = 0;
+        let mut last_i = 0;
+        let mut last_j = 0;
+        while size < self.points.len() {
+            let next_connection = self
+                .distances
+                .iter()
+                .enumerate()
+                .flat_map(|(i, neighbours)| {
+                    neighbours
+                        .iter()
+                        .enumerate()
+                        .filter(|(_j, neighbour)| neighbour > &&min_distance)
+                        .map(|(j, d)| (i, j, *d))
+                        .collect::<Vec<_>>()
+                })
+                .min_by(|l, r| l.2.partial_cmp(&r.2).unwrap())
+                .unwrap();
+            min_distance = next_connection.2;
+            let (i, j, _d) = next_connection;
+            circuits.union(i, j);
+            last_i = i;
+            last_j = j;
+            let mut sizes = Vec::new();
+            sizes.resize(self.points.len(), 0);
+            for i in 0..self.points.len() {
+                sizes[circuits.find(i)] += 1;
+            }
+            size = *sizes.iter().max().unwrap();
+        }
+        self.points[last_i].x * self.points[last_j].x
+    }
 }
 
 fn main() {
@@ -114,4 +149,8 @@ fn main() {
         .take(3)
         .product();
     println!("Part 1: {}", actual);
+    let test = Points::new(TEST_INPUT).part_2();
+    println!("Part 2 - test: {}", test);
+    let actual = Points::new(include_str!("../input.txt")).part_2();
+    println!("Part 2 - test: {}", actual);
 }
