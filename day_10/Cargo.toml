@@ -4,4 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+gag = "1.0.0"
+good_lp = { version = "1.14.2", features = ["scip", "scip_bundled"]}
 pathfinding = "4.14.0"
+rayon = "1.11.0"
