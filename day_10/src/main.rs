@@ -1,6 +1,5 @@
 use good_lp::*;
 use pathfinding::prelude::bfs;
-use rayon::prelude::*;
 use std::fmt;
 
 const TEST_INPUT: &str = "[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}
@@ -132,7 +131,7 @@ impl Machine {
                 .max(*self.joltages.iter().max().unwrap() as f64)
         }));
         let objective: Expression = n_flips.iter().sum();
-        let mut model = problem.minimise(&objective).using(scip);
+        let mut model = problem.minimise(&objective).using(microlp);
         for (joltage_index, target_joltage) in self.joltages.iter().enumerate() {
             let mut lhs_expression = Expression::default();
 
@@ -141,11 +140,10 @@ impl Machine {
                     lhs_expression += &n_flips[button_index];
                 }
             }
-
             model.add_constraint(lhs_expression.eq(*target_joltage as f64));
         }
         let solution = model.solve().unwrap();
-        solution.eval(&objective) as usize
+        solution.eval(&objective).round() as usize
     }
 }
 
@@ -162,8 +160,6 @@ fn part_2(input: &str) -> usize {
     input
         .split('\n')
         .filter(|line| !line.is_empty())
-        .collect::<Vec<_>>()
-        .par_iter()
         .map(|line| Machine::from_str(line))
         .map(|machine| {
             let cost = machine.min_flips_to_reach_target_joltages();
